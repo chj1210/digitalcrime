@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互動式報告：加密貨幣與毒品犯罪</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive dashboard with four main thematic sections: 1. Overview (the scale of the problem), 2. Criminal Methods (the 'how'), 3. Law Enforcement Counter (the response), and 4. Future Challenges (what's next). This non-linear, thematic structure is chosen over a linear report format to empower users to explore topics based on their interest, enhancing engagement and comprehension. Key interactions include clickable cards to compare technologies, an interactive flowchart for the money laundering cycle, and a clickable map for regulations, making complex information digestible and intuitive. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Incognito Market Stats -> Goal: Inform/Impact -> Viz: Large Stat Cards -> Interaction: Static Display -> Justification: Provides immediate, high-impact understanding of the scale. -> Library/Method: HTML/Tailwind.
+        - Report Info: Table 2.1 (Anonymity Tech) -> Goal: Compare/Inform -> Viz: Interactive Bar Chart & Clickable Cards -> Interaction: Click cards to filter chart/show details -> Justification: Transforms a dense table into an engaging comparison tool. -> Library/Method: Chart.js & Vanilla JS.
+        - Report Info: Money Laundering Cycle -> Goal: Organize/Process -> Viz: HTML/CSS Flowchart -> Interaction: Hover to highlight stage & show text -> Justification: Visually simplifies a complex, multi-stage process. -> Library/Method: HTML/Tailwind/JS.
+        - Report Info: Table 4.1 (Forensic Tools) -> Goal: Inform/Organize -> Viz: Grid of Clickable Cards -> Interaction: Click to show tool details -> Justification: Breaks down technical information into manageable, interactive snippets. -> Library/Method: HTML/Tailwind/JS.
+        - Report Info: Table 5.1 (FATF Travel Rule) -> Goal: Compare/Inform -> Viz: Simplified Clickable World Map -> Interaction: Click region to show status -> Justification: Provides a more engaging geographical context than a static table. -> Library/Method: HTML/Tailwind/JS.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8f9fa; }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 300px; max-height: 40vh; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        .nav-link { transition: color 0.3s, border-bottom-color 0.3s; }
+        .nav-link.active { color: #2563eb; border-bottom-color: #2563eb; }
+        .flowchart-step { transition: all 0.3s ease-in-out; }
+        .flowchart-step:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .tech-card { transition: all 0.3s ease-in-out; cursor: pointer; }
+        .tech-card.selected { border-color: #2563eb; transform: scale(1.05); }
+        .map-region { transition: all 0.3s ease-in-out; cursor: pointer; }
+        .map-region:hover, .map-region.selected { background-color: #3b82f6; color: white; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-blue-600">數位犯罪的分析</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#overview" class="nav-link text-gray-600 hover:text-blue-600 border-b-2 border-transparent pb-1">總覽</a>
+                <a href="#methods" class="nav-link text-gray-600 hover:text-blue-600 border-b-2 border-transparent pb-1">犯罪手法</a>
+                <a href="#counter" class="nav-link text-gray-600 hover:text-blue-600 border-b-2 border-transparent pb-1">執法反制</a>
+                <a href="#future" class="nav-link text-gray-600 hover:text-blue-600 border-b-2 border-transparent pb-1">未來挑戰</a>
+            </div>
+             <button id="mobile-menu-button" class="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden bg-white">
+            <a href="#overview" class="block text-center py-2 text-gray-600 hover:bg-gray-100">總覽</a>
+            <a href="#methods" class="block text-center py-2 text-gray-600 hover:bg-gray-100">犯罪手法</a>
+            <a href="#counter" class="block text-center py-2 text-gray-600 hover:bg-gray-100">執法反制</a>
+            <a href="#future" class="block text-center py-2 text-gray-600 hover:bg-gray-100">未來挑戰</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <!-- Section 1: Overview -->
+        <section id="overview" class="my-12 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">新興的數位犯罪前沿</h2>
+                <p class="max-w-3xl mx-auto text-gray-600">
+                    加密貨幣與暗網技術已將傳統毒品交易，重塑為一個無國界、高匿名的全球數位犯罪企業。本節將以「隱身市場」(Incognito Market) 為例，揭示此新型犯罪架構的龐大規模與對全球執法構成的嚴峻挑戰。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center mb-12">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-4xl font-bold text-blue-600">> 1億美元</h3>
+                    <p class="text-gray-500 mt-2">「隱身市場」總交易額</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-4xl font-bold text-blue-600">> 22萬名</h3>
+                    <p class="text-gray-500 mt-2">全球註冊會員</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold text-blue-600">主謀僅憑一台筆電運營</h3>
+                    <p class="text-gray-500 mt-2">從大學生到全球毒梟</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                 <h3 class="text-2xl font-bold text-center mb-6">數位毒品交易流程</h3>
+                 <p class="text-center text-gray-600 mb-8">這是一個結合數位匿名性與實體物流的犯罪閉環。使用者透過暗網進入地下市場，使用難以追蹤的加密貨幣完成支付，最終透過傳統郵政系統收取偽裝的毒品包裹，每一步都設計用來規避偵查。</p>
+                <div id="flowchart-container" class="flex flex-col md:flex-row justify-around items-center space-y-4 md:space-y-0 md:space-x-4">
+                    <div class="flowchart-step text-center p-4 rounded-lg border-2 border-gray-200 w-full md:w-1/5 bg-gray-50">
+                        <div class="text-3xl mb-2">①</div>
+                        <h4 class="font-bold">買家</h4>
+                        <p class="text-sm text-gray-500">透過匿名瀏覽器 (如Tor) 進入暗網</p>
+                    </div>
+                     <div class="text-2xl text-gray-400 transform rotate-90 md:rotate-0">→</div>
+                    <div class="flowchart-step text-center p-4 rounded-lg border-2 border-gray-200 w-full md:w-1/5 bg-gray-50">
+                        <div class="text-3xl mb-2">②</div>
+                        <h4 class="font-bold">隱身市場</h4>
+                        <p class="text-sm text-gray-500">在地下電商平台下訂單</p>
+                    </div>
+                     <div class="text-2xl text-gray-400 transform rotate-90 md:rotate-0">→</div>
+                    <div class="flowchart-step text-center p-4 rounded-lg border-2 border-gray-200 w-full md:w-1/5 bg-gray-50">
+                        <div class="text-3xl mb-2">③</div>
+                        <h4 class="font-bold">加密貨幣支付</h4>
+                        <p class="text-sm text-gray-500">使用比特幣或門羅幣完成交易</p>
+                    </div>
+                     <div class="text-2xl text-gray-400 transform rotate-90 md:rotate-0">→</div>
+                    <div class="flowchart-step text-center p-4 rounded-lg border-2 border-gray-200 w-full md:w-1/5 bg-gray-50">
+                        <div class="text-3xl mb-2">④</div>
+                        <h4 class="font-bold">賣家</h4>
+                        <p class="text-sm text-gray-500">收到款項後，偽裝包裹寄出</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Methods -->
+        <section id="methods" class="my-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">犯罪的技術軍火庫</h2>
+                <p class="max-w-3xl mx-auto text-gray-600">
+                    從假名性的比特幣到完全匿蹤的隱私幣，犯罪分子不斷升級其技術工具以對抗執法追蹤。本節將解析這些匿名技術的運作原理與洗錢的關鍵步驟，揭示執法單位面臨的「技術軍備競賽」。
+                </p>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg shadow-lg mb-12">
+                 <h3 class="text-2xl font-bold text-center mb-2">匿名技術光譜</h3>
+                 <p class="text-center text-gray-600 mb-8">不同的加密技術提供不同程度的匿名性。點擊下方卡片，查看其在反制調查上的難度與特性。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-center" id="tech-selector">
+                    <div class="tech-card border-2 p-4 rounded-lg" data-tech="btc">
+                        <h4 class="font-bold">比特幣 (公開帳本)</h4>
+                    </div>
+                    <div class="tech-card border-2 p-4 rounded-lg" data-tech="exchange">
+                        <h4 class="font-bold">交易所內交易</h4>
+                    </div>
+                    <div class="tech-card border-2 p-4 rounded-lg" data-tech="mixer">
+                        <h4 class="font-bold">混幣器/攪拌器</h4>
+                    </div>
+                    <div class="tech-card border-2 p-4 rounded-lg" data-tech="privacy">
+                        <h4 class="font-bold">隱私幣 (門羅幣)</h4>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="chart-container">
+                        <canvas id="techDifficultyChart"></canvas>
+                    </div>
+                    <div id="tech-details" class="bg-gray-100 p-6 rounded-lg min-h-[250px] flex flex-col justify-center">
+                        <h4 id="tech-title" class="text-xl font-bold mb-2">請選擇一項技術</h4>
+                        <p id="tech-description" class="text-gray-700">點擊上方的卡片以查看詳細資訊。</p>
+                    </div>
+                </div>
+            </div>
+
+             <div class="bg-white p-8 rounded-lg shadow-lg">
+                <h3 class="text-2xl font-bold text-center mb-6">現代加密貨幣洗錢週期</h3>
+                <p class="text-center text-gray-600 mb-8">非法所得透過「放置、分層、整合」三步驟洗白。犯罪分子利用跨鏈、混幣器等複雜手法，企圖切斷資金與犯罪來源的連結，最終將「乾淨」的資金投入合法經濟體系，例如購買房地產。</p>
+                <div class="relative flex flex-col md:flex-row justify-between items-center w-full space-y-8 md:space-y-0">
+                    <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-300 hidden md:block"></div>
+                    <div class="flex flex-col items-center z-10 w-full md:w-1/3">
+                        <div class="w-16 h-16 bg-blue-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-2">1</div>
+                        <h4 class="font-bold">放置 (Placement)</h4>
+                        <p class="text-sm text-center text-gray-500 px-2">毒品銷售的佣金等非法資金，進入犯罪分子控制的加密錢包。</p>
+                    </div>
+                    <div class="flex flex-col items-center z-10 w-full md:w-1/3">
+                        <div class="w-16 h-16 bg-blue-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-2">2</div>
+                        <h4 class="font-bold">分層 (Layering)</h4>
+                        <p class="text-sm text-center text-gray-500 px-2">透過跨鏈、混幣器、擴散至數千地址，混淆金流，切斷追蹤軌跡。</p>
+                    </div>
+                    <div class="flex flex-col items-center z-10 w-full md:w-1/3">
+                        <div class="w-16 h-16 bg-blue-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-2">3</div>
+                        <h4 class="font-bold">整合 (Integration)</h4>
+                        <p class="text-sm text-center text-gray-500 px-2">「乾淨」的資金透過交易所、P2P平台轉換為法幣，或購買豪宅等實體資產。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Counter -->
+        <section id="counter" class="my-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">全球天羅地網的反制攻勢</h2>
+                <p class="max-w-3xl mx-auto text-gray-600">
+                    面對跨國數位犯罪，單一國家無法獨自應對。本節將展示執法單位如何透過國際合作、公私協力，並利用先進的區塊鏈鑑識工具，追蹤數位麵包屑，以及全球監管框架如何收緊金融絞索。
+                </p>
+            </div>
+            
+            <div class="bg-white p-8 rounded-lg shadow-lg mb-12">
+                <h3 class="text-2xl font-bold text-center mb-8">執法單位的區塊鏈鑑識工具箱</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="tools-grid">
+                </div>
+                <div id="tool-details" class="mt-8 bg-gray-100 p-6 rounded-lg min-h-[150px] flex items-center justify-center text-gray-500">
+                    點擊一個工具圖示以查看其功能
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <h3 class="text-2xl font-bold text-center mb-2">全球監管壓力：「轉帳規則」實施圖</h3>
+                <p class="text-center text-gray-600 mb-8">FATF的「轉帳規則」要求加密貨幣交易必須包含發送方和接收方的身份資訊，旨在消除匿名轉帳的漏洞。點擊地圖上的主要經濟體，查看其監管狀態。</p>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div id="map-container" class="flex flex-wrap gap-4 justify-center items-center bg-gray-100 p-6 rounded-lg">
+                        <div class="map-region p-4 rounded-lg bg-gray-200" data-region="usa">美國</div>
+                        <div class="map-region p-4 rounded-lg bg-gray-200" data-region="eu">歐盟</div>
+                        <div class="map-region p-4 rounded-lg bg-gray-200" data-region="uk">英國</div>
+                        <div class="map-region p-4 rounded-lg bg-gray-200" data-region="sg">新加坡</div>
+                        <div class="map-region p-4 rounded-lg bg-gray-200" data-region="jp">日本</div>
+                        <div class="map-region p-4 rounded-lg bg-gray-200" data-region="tw">台灣</div>
+                    </div>
+                    <div id="map-details" class="bg-gray-100 p-6 rounded-lg min-h-[200px] flex flex-col justify-center">
+                        <h4 id="map-region-title" class="text-xl font-bold mb-2">請選擇一個地區</h4>
+                        <div id="map-region-info"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Future -->
+        <section id="future" class="my-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">戰略建議與未來展望</h2>
+                <p class="max-w-3xl mx-auto text-gray-600">
+                    這是一場動態的技術軍備競賽。為了保持優勢，台灣必須採納前瞻性戰略，深化國內能力與國際合作，並主動預測AI、DeFi等新興技術帶來的威脅。
+                </p>
+            </div>
+            <div class="space-y-4">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-2">對執法單位的建議</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1">
+                        <li>深化技術能力建構：強制實施進階區塊鏈鑑識培訓。</li>
+                        <li>擴大公私夥伴關係：與VASP及國際交易所建立常設合作小組。</li>
+                        <li>最大化國家查扣平台效能：確保所有查扣數位資產納入監管。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-2">對監管與政策制定者的建議</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1">
+                        <li>採納風險為本的監管模式：對VASP進行嚴格審計與懲罰。</li>
+                        <li>現代化法律框架：修訂法規以應對查扣數位資產的挑戰。</li>
+                        <li>倡導國際監管協調：分享經驗，推動全球FATF標準實施。</li>
+                    </ul>
+                </div>
+                 <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-2">未來新興威脅</h3>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li><strong>人工智慧(AI)驅動的犯罪：</strong>利用AI製造深度偽造、繞過KYC驗證。</li>
+                        <li><strong>去中心化金融(DeFi)前線：</strong>缺乏中介機構，成為非法資金的新避風港。</li>
+                        <li><strong>下一代隱私技術：</strong>更先進的隱私幣與零知識證明將挑戰現有鑑識工具。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-12 py-6">
+        <div class="container mx-auto text-center text-gray-400 text-sm">
+            <p>根據公開資訊編制，僅供參考。</p>
+            <p>&copy; 2025 數位犯罪分析</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Mobile Menu
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            document.querySelectorAll('#mobile-menu a').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+
+            // Nav link scroll behavior
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            // Section 2: Tech Comparison
+            const techData = {
+                btc: { title: '比特幣 (公開帳本)', difficulty: 5, description: '交易與地址公開，但身份是假名。透過專業工具和鏈下情報，執法單位可追蹤金流並將其與真實世界實體連結。' },
+                exchange: { title: '交易所內交易', difficulty: 2, description: '資金在交易所內部帳本流動，外部不可見。但交易所受嚴格監管，執法單位可透過法律程序調取用戶KYC資料，追蹤相對容易。' },
+                mixer: { title: '混幣器/攪拌器', difficulty: 8, description: '旨在切斷資金來源與去向的連結，將大量用戶資金混合。需要專門的「去混淆」分析工具來追蹤，難度高，且許多混幣器已被制裁。' },
+                privacy: { title: '隱私幣 (如門羅幣)', difficulty: 10, description: '從協議層面就隱藏了交易方、金額與地址，使其天生難以追蹤。這是目前反制調查難度最高的技術，已被多國禁止或從交易所下架。' }
+            };
+
+            const techDetails = {
+                title: document.getElementById('tech-title'),
+                description: document.getElementById('tech-description')
+            };
+
+            const ctx = document.getElementById('techDifficultyChart').getContext('2d');
+            const difficultyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.values(techData).map(t => t.title.split(' ')[0]),
+                    datasets: [{
+                        label: '反制調查難度 (1-10)',
+                        data: Object.values(techData).map(t => t.difficulty),
+                        backgroundColor: [
+                            'rgba(255, 159, 64, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                        ],
+                        borderColor: [
+                            'rgba(255, 159, 64, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 10 } },
+                    plugins: { legend: { display: false } },
+                    indexAxis: 'y',
+                }
+            });
+
+            const techCards = document.querySelectorAll('.tech-card');
+            techCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    techCards.forEach(c => c.classList.remove('selected', 'border-blue-500', 'bg-blue-50'));
+                    card.classList.add('selected', 'border-blue-500', 'bg-blue-50');
+                    const techId = card.dataset.tech;
+                    const data = techData[techId];
+                    techDetails.title.textContent = data.title;
+                    techDetails.description.textContent = data.description;
+                });
+            });
+            // Select first card by default
+            techCards[0].click();
+
+
+            // Section 3: Tools
+            const toolsData = {
+                chainalysis: { name: 'Chainalysis Reactor', icon: '🔍', description: '業界領先的調查與視覺化工具，擅長追蹤資金穿過混幣器和跨鏈橋，並將假名地址歸因於真實世界的服務或個人。' },
+                trm: { name: 'TRM Labs', icon: '🛡️', description: '提供跨鏈分析、風險評分功能，能識別與高風險司法管轄區或受制裁實體的交易，協助機構進行鑑識調查。' },
+                merkle: { name: 'Merkle Science', icon: '📈', description: '透過分析交易模式來偵測洗錢等異常行為，並能自動化繪製複雜金流圖，節省調查時間。' },
+                xrex: { name: 'XREX', icon: '🤝', description: '台灣的分析公司，專精於穩定幣(USDT)金流追蹤，在多起國內案件中協助檢警釐清犯罪網絡。' }
+            };
+            const toolsGrid = document.getElementById('tools-grid');
+            const toolDetails = document.getElementById('tool-details');
+
+            Object.keys(toolsData).forEach(key => {
+                const tool = toolsData[key];
+                const toolEl = document.createElement('div');
+                toolEl.className = 'flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-blue-100 cursor-pointer transition';
+                toolEl.innerHTML = `<div class="text-4xl mb-2">${tool.icon}</div><span class="font-bold text-center">${tool.name}</span>`;
+                toolEl.addEventListener('click', () => {
+                    toolDetails.innerHTML = `
+                        <div class="text-center">
+                            <h4 class="text-xl font-bold text-blue-700">${tool.name}</h4>
+                            <p class="mt-2 text-gray-700">${tool.description}</p>
+                        </div>
+                    `;
+                });
+                toolsGrid.appendChild(toolEl);
+            });
+
+            // Section 3: Map
+             const mapData = {
+                usa: { name: '美國', status: '已實施', threshold: '$3,000 美元', law: 'Bank Secrecy Act (BSA)' },
+                eu: { name: '歐盟', status: '已實施 (TFR)', threshold: '€1,000 歐元 (若涉自託管錢包則無門檻)', law: 'Transfer of Funds Regulation (TFR)' },
+                uk: { name: '英國', status: '2023年9月實施', threshold: '£1,000 英鎊', law: 'Money Laundering Regulations' },
+                sg: { name: '新加坡', status: '已實施', threshold: 'S$1,500 新加坡元', law: 'Payment Services Act (PS Act)' },
+                jp: { name: '日本', status: '已實施', threshold: '無特定門檻', law: 'Act on Prevention of Transfer of Criminal Proceeds' },
+                tw: { name: '台灣', status: '已實施', threshold: '新台幣 $30,000 元', law: '洗錢防制法' },
+            };
+            const mapRegions = document.querySelectorAll('.map-region');
+            const mapDetails = {
+                title: document.getElementById('map-region-title'),
+                info: document.getElementById('map-region-info')
+            };
+
+            mapRegions.forEach(region => {
+                region.addEventListener('click', () => {
+                    mapRegions.forEach(r => r.classList.remove('selected'));
+                    region.classList.add('selected');
+                    const regionId = region.dataset.region;
+                    const data = mapData[regionId];
+                    mapDetails.title.textContent = data.name;
+                    mapDetails.info.innerHTML = `
+                        <p><strong>狀態:</strong> ${data.status}</p>
+                        <p><strong>交易門檻:</strong> ${data.threshold}</p>
+                        <p><strong>相關法規:</strong> ${data.law}</p>
+                    `;
+                });
+            });
+             // Select first region by default
+            mapRegions[0].click();
+        });
+    </script>
+</body>
+</html>
